@@ -54,4 +54,4 @@ def ajax():
 
     return json.dumps(res)
 
-app.run()
+#app.run()
