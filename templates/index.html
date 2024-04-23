@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" class="h-100">
     <head>
         <meta charset="UTF-8">
         <title>Композитные материалы</title>
@@ -27,12 +27,12 @@
                             let tar = e.target.id.split('-');
                             val = val.replace(/,/g, '.').replace(/[^\d.]/g, '').split('.');
                             if (val.length > 1 && val[1] != '' && val[0] == '') val[0] = '0';
-                            this.form[tar[0]].fields[tar[1]] = val.slice(0, 2).join('.');
+                            this.form[tar[0]].fields_value[tar[1]] = val.slice(0, 2).join('.');
                         },
                         focus: function(e) {
                             let val = e.target.value;
                             let tar = e.target.id.split('-');
-                            if (!parseFloat(val)) this.form[tar[0]].fields[tar[1]] = '';
+                            if (!parseFloat(val)) this.form[tar[0]].fields_values[tar[1]] = '';
                         },  
                         send: function(form, e) {
                             if (this.loader) return false;
@@ -48,10 +48,14 @@
                                         res.json().then(
                                             res => {
                                                 if (res) {
-                                                    for( let a in this.form[form].answer) { 
-                                                        this.form[form].answer[a] = `<h2 class="fw-bold">${res[a]}</h2>`;
+                                                    if ('error' in res) {
+                                                        this.error(form, 'Некорректное значение:<br />' + res.error)
+                                                    } else {
+                                                        for( let a in this.form[form].answer) {
+                                                            this.form[form].answer[a] = `<h2 class="fw-bold">${res[a]}</h2>`;
+                                                        }
+                                                        this.scroll();
                                                     }
-                                                    this.scroll();
                                                 } else {
                                                     this.error(form, 'Ошибка получения данных')
                                                 }
@@ -62,7 +66,7 @@
                                     else this.error(form, `Ошибка сервера (${res.status})`)
                                 },
                                 () => this.error(form, 'Сервер недоступен')
-                            ), 2000);
+                            ), 1111);
                         },
                         error: function(form, error) {
                             for( let a in this.form[form].answer) { 
@@ -72,7 +76,7 @@
                         },
                         scroll: function() {
                             this.loader = false;
-                            let elem = document.querySelector('#answer');
+                            let elem = document.querySelector('#answer-' + this.form_action);
                             if (elem) {
                                 Vue.nextTick().then(() => {
                                     elem.scrollIntoView({block: 'center', behavior: 'smooth'});
@@ -81,13 +85,13 @@
                         }
                     },
                     template: `
-                        <div>
+                        <div class="h-100">
                             <div v-if="loader" class="position-fixed w-100 h-100">
                                 <div class="bg-light bg-opacity-50 w-100 h-100 d-flex justify-content-center d-flex align-items-center">
                                     <div class="spinner-border text-danger" role="status" style="width: 7rem; height: 7rem;"></div>
                                 </div>
                             </div>
-                            <div class="container py-4">
+                            <div class="container py-4 mb-5">
                                 <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
                                     <li v-for="(frm, f) in form" class="nav-item" role="presentation">
                                         <button
@@ -120,7 +124,7 @@
                                             <form v-on:submit.prevent="send(f, $event)" method="post">
                                                 <input type="hidden" name="form" :value="f" />
                                                 <div class="row mt-5">
-                                                    <div v-for="(fld, i) in frm.fields" class="col-xl-4 col-md-6 mb-3 text-start">
+                                                    <div v-for="i in frm.fields" class="col-xl-4 col-md-6 mb-3 text-start">
                                                         <label  
                                                             v-html="fields[i].name"
                                                             :for="f + '-' + i"
@@ -130,7 +134,7 @@
                                                             v-if="fields[i].ref"
                                                             :required="!fields[i].required"
                                                             :name="fields[i].name"
-                                                            v-model="frm.fields[i]"
+                                                            v-model="frm.fields_value[i]"
                                                             class="form-select"
                                                         >
                                                             <option v-for="(ref, r) in fields[i].ref"
@@ -143,7 +147,7 @@
                                                             :id="f + '-' + i"
                                                             :required="!fields[i].required"
                                                             :name="fields[i].name"
-                                                            v-model="frm.fields[i]"
+                                                            v-model="frm.fields_value[i]"
                                                             @input="input($event)"
                                                             @focusin="focus($event)"
                                                             @focusout="focus($event)"
@@ -152,11 +156,11 @@
                                                         />
                                                     </div>
                                                 </div>
-                                                <div class="row mt-3">
+                                                <div class="row mt-3 pb-5">
                                                     <div class="col-12 mb-5">
                                                         <button type="submit" class="btn btn-primary btn-lg w-100">Рассчитать</button>
                                                     </div>
-                                                    <div id="answer" class="d-flex d-flex flex-wrap justify-content-evenly">
+                                                    <div :id="'answer-' + f" class="d-flex d-flex flex-wrap justify-content-evenly">
                                                         <div
                                                             v-for="(ans, a) in frm.answer"
                                                             v-if="ans"
@@ -171,13 +175,33 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="bg-dark-subtle position-fixed bottom-0 w-100">
+                                <div class="container py-2">
+                                    <div class="collapse mb-1 fs-6" id="collapseExample">
+                                        <div>
+                                            Московский государственный технический университет
+                                            имени Н.Э. Баумана (национальный исследовательский университет)
+                                        </div>
+                                        <div class="fw-bold">
+                                            Выпускная квалификационная работа по курсу Data Science Pro
+                                        </div>
+                                    </div>
+                                    <div
+                                        data-bs-toggle="collapse" href="#collapseExample" role="button"
+                                        aria-expanded="false" aria-controls="collapseExample"
+                                        class="badge text-bg-primary"
+                                    >
+                                        © 2024 Розенко Максим Валерьевич
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     `
                 })
             })
         </script>
     </head>
-    <body style="overflow-y: scroll" >
+    <body class="h-100 overflow-y-scroll">
         <script id="app">
             'use strict';
             const DATA = {{ struct }};
